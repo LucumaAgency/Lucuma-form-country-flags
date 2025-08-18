@@ -4,7 +4,14 @@
 
 .iti {
     width: 100% !important;
-    display: block;
+    display: flex !important;
+    gap: 10px;
+}
+
+.iti__flag-container {
+    position: relative !important;
+    width: auto !important;
+    flex-shrink: 0;
 }
 
 .iti__flag {
@@ -29,15 +36,19 @@
 
 .iti__country-list {
     z-index: 99999;
-    background: #fff;
+    background: #ffffff !important;
+    color: #000000 !important;
     border: 1px solid #ccc;
     max-height: 200px;
     overflow-y: auto;
+    min-width: 382px !important;
+    width: 100%;
 }
 
 .iti__country {
     padding: 5px 10px;
     cursor: pointer;
+    color: #000000 !important;
 }
 
 .iti__country:hover {
@@ -55,6 +66,7 @@
 
 .iti__country-name {
     margin-left: 6px;
+    color: #000000 !important;
 }
 
 .iti__dial-code {
@@ -63,7 +75,9 @@
 
 .elementor-field-group .iti input[type="tel"],
 .wpr-form-field-group .iti input[type="tel"] {
-    padding-left: 52px !important;
+    padding-left: 15px !important;
+    flex: 1;
+    width: 100% !important;
 }
 
 .iti--allow-dropdown .iti__flag-container:hover .iti__selected-flag {
@@ -220,7 +234,7 @@ input[type="tel"].lfcf-phone-input:focus {
 }
 
 .iti--allow-dropdown input[type="tel"].lfcf-phone-input {
-    padding-left: 52px;
+    padding-left: 15px !important;
 }
 
 body.rtl .iti--allow-dropdown input[type="tel"].lfcf-phone-input {
