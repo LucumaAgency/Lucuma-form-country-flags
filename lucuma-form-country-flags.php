@@ -79,6 +79,14 @@ class Lucuma_Form_Country_Flags {
                 LFCF_VERSION,
                 true
             );
+            
+            wp_enqueue_script(
+                'lucuma-form-country-flags-init',
+                LFCF_PLUGIN_URL . 'assets/js/lucuma-form-country-flags-init.js',
+                array( 'lucuma-form-country-flags' ),
+                LFCF_VERSION,
+                true
+            );
 
             wp_localize_script(
                 'lucuma-form-country-flags',

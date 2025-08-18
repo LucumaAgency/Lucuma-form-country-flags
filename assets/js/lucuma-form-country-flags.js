@@ -4,11 +4,35 @@
     var lfcfInitialized = [];
 
     window.initLucumaPhoneInputs = function() {
-        $('.lfcf-phone-input, input[type="tel"][data-lfcf-phone="true"], .elementor-field-type-tel input, .wpr-form-field-tel').each(function() {
+        console.log('[LFCF] initLucumaPhoneInputs called');
+        
+        var phoneSelectors = [
+            '.lfcf-phone-input',
+            'input[type="tel"]',
+            '.elementor-field-type-tel input',
+            '.elementor-field-type-tel',
+            '.wpr-form-field-tel',
+            'input.elementor-field-textual[type="tel"]',
+            '.elementor-field[type="tel"]'
+        ];
+        
+        var $phoneInputs = $(phoneSelectors.join(', '));
+        console.log('[LFCF] Found phone inputs:', $phoneInputs.length);
+        
+        $phoneInputs.each(function(index) {
             var input = this;
             var $input = $(input);
             
+            console.log('[LFCF] Processing input #' + index + ':', {
+                type: input.type,
+                name: input.name,
+                id: input.id,
+                classes: input.className,
+                alreadyInitialized: lfcfInitialized.indexOf(input) !== -1
+            });
+            
             if (lfcfInitialized.indexOf(input) !== -1) {
+                console.log('[LFCF] Input already initialized, skipping');
                 return;
             }
             
@@ -68,9 +92,19 @@
                 }
             }
             
-            var iti = window.intlTelInput(input, options);
+            console.log('[LFCF] Initializing intlTelInput with options:', options);
             
-            lfcfInitialized.push(input);
+            try {
+                var iti = window.intlTelInput(input, options);
+                console.log('[LFCF] intlTelInput initialized successfully for input #' + index);
+                
+                lfcfInitialized.push(input);
+                
+                $input.addClass('lfcf-initialized');
+            } catch (error) {
+                console.error('[LFCF] Error initializing intlTelInput:', error);
+                return;
+            }
             
             $input.on('blur', function() {
                 var $this = $(this);
@@ -151,25 +185,39 @@
     }
     
     $(document).ready(function() {
+        console.log('[LFCF] Document ready - Initializing Lucuma Form Country Flags');
+        console.log('[LFCF] intlTelInput available:', typeof window.intlTelInput !== 'undefined');
+        console.log('[LFCF] jQuery version:', $.fn.jquery);
+        
         if (typeof window.intlTelInput !== 'undefined') {
+            console.log('[LFCF] Calling initLucumaPhoneInputs on document ready');
             initLucumaPhoneInputs();
+        } else {
+            console.error('[LFCF] intlTelInput library not loaded!');
         }
         
         $(document).on('elementor/popup/show', function() {
+            console.log('[LFCF] Elementor popup shown - reinitializing');
             setTimeout(initLucumaPhoneInputs, 100);
         });
         
-        if (typeof elementorFrontend !== 'undefined') {
+        if (typeof elementorFrontend !== 'undefined' && elementorFrontend.hooks) {
+            console.log('[LFCF] Elementor Frontend detected - adding hooks');
             elementorFrontend.hooks.addAction('frontend/element_ready/form.default', function($scope) {
+                console.log('[LFCF] Elementor form ready - reinitializing');
                 setTimeout(initLucumaPhoneInputs, 100);
             });
             
             elementorFrontend.hooks.addAction('frontend/element_ready/wpr-forms.default', function($scope) {
+                console.log('[LFCF] Royal forms ready - reinitializing');
                 setTimeout(initLucumaPhoneInputs, 100);
             });
+        } else {
+            console.log('[LFCF] Elementor Frontend not available yet');
         }
         
         $(document).ajaxComplete(function() {
+            console.log('[LFCF] Ajax complete - checking for new phone inputs');
             setTimeout(initLucumaPhoneInputs, 100);
         });
         
@@ -203,7 +251,28 @@
     });
     
     $(window).on('load', function() {
+        console.log('[LFCF] Window loaded - final initialization attempt');
         setTimeout(initLucumaPhoneInputs, 500);
+    });
+    
+    // Specific Elementor support - wait for Elementor to be ready
+    $(window).on('elementor/frontend/init', function() {
+        console.log('[LFCF] Elementor frontend initialized');
+        
+        if (window.elementorFrontend && window.elementorFrontend.hooks) {
+            elementorFrontend.hooks.addAction('frontend/element_ready/form.default', function($scope) {
+                console.log('[LFCF] Elementor form element ready');
+                setTimeout(function() {
+                    initLucumaPhoneInputs();
+                }, 200);
+            });
+        }
+    });
+    
+    // Alternative method for Elementor forms
+    jQuery(document).on('elementor_pro_forms_ready', function() {
+        console.log('[LFCF] Elementor Pro forms ready event');
+        initLucumaPhoneInputs();
     });
 
 })(jQuery);

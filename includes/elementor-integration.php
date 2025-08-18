@@ -33,13 +33,17 @@ class LFCF_Elementor_Integration {
     }
 
     public function add_tel_attributes( $field, $field_index, $form ) {
-        if ( 'tel' === $field['field_type'] ) {
+        if ( isset( $field['field_type'] ) && 'tel' === $field['field_type'] ) {
             if ( ! isset( $field['field_classes'] ) ) {
                 $field['field_classes'] = '';
             }
             $field['field_classes'] .= ' lfcf-phone-input';
             
-            $field['data-lfcf-phone'] = 'true';
+            // Add data attribute for JS detection
+            add_filter( 'elementor_pro/forms/render/item/tel', function( $item ) {
+                $item['field_classes'] = isset( $item['field_classes'] ) ? $item['field_classes'] . ' lfcf-phone-input' : 'lfcf-phone-input';
+                return $item;
+            }, 10, 1 );
         }
         
         return $field;
