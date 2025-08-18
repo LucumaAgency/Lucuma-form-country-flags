@@ -1,0 +1,229 @@
+.lfcf-phone-input {
+    width: 100% !important;
+}
+
+.iti {
+    width: 100% !important;
+    display: block;
+}
+
+.iti__flag {
+    background-image: url("../lib/intl-tel-input/img/flags.png");
+}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .iti__flag {
+        background-image: url("../lib/intl-tel-input/img/flags@2x.png");
+    }
+}
+
+.elementor-field-type-tel .iti,
+.wpr-form-field-tel .iti {
+    margin-bottom: 0;
+}
+
+.elementor-field-type-tel .iti__selected-flag,
+.wpr-form-field-tel .iti__selected-flag {
+    padding: 0 8px;
+}
+
+.iti__country-list {
+    z-index: 99999;
+    background: #fff;
+    border: 1px solid #ccc;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.iti__country {
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.iti__country:hover {
+    background-color: #f5f5f5;
+}
+
+.iti__country.iti__highlight {
+    background-color: #e8e8e8;
+}
+
+.iti__flag-box {
+    display: inline-block;
+    width: 20px;
+}
+
+.iti__country-name {
+    margin-left: 6px;
+}
+
+.iti__dial-code {
+    color: #666;
+}
+
+.elementor-field-group .iti input[type="tel"],
+.wpr-form-field-group .iti input[type="tel"] {
+    padding-left: 52px !important;
+}
+
+.iti--allow-dropdown .iti__flag-container:hover .iti__selected-flag {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.iti input.error {
+    border-color: #ff4444;
+}
+
+.iti__flag.iti__globe {
+    background-image: url("../lib/intl-tel-input/img/globe.png");
+}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .iti__flag.iti__globe {
+        background-image: url("../lib/intl-tel-input/img/globe@2x.png");
+    }
+}
+
+body.rtl .iti__flag-container {
+    right: auto;
+    left: 0;
+}
+
+body.rtl .iti--allow-dropdown input[type="tel"] {
+    padding-right: 6px;
+    padding-left: 52px;
+    text-align: right;
+}
+
+body.rtl .iti__country-list {
+    text-align: right;
+}
+
+@media (max-width: 500px) {
+    .iti__country-list {
+        white-space: normal;
+        max-width: 100%;
+    }
+}
+
+.lfcf-error {
+    border-color: #dc3545 !important;
+}
+
+.lfcf-error-msg {
+    display: block;
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 5px;
+    font-weight: 400;
+}
+
+.elementor-field-group .lfcf-error-msg,
+.wpr-form-field-group .lfcf-error-msg {
+    margin-top: 8px;
+}
+
+.iti--separate-dial-code .iti__selected-flag {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.iti--separate-dial-code .iti__selected-dial-code {
+    margin-left: 6px;
+}
+
+.iti--container {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+    z-index: 1060;
+}
+
+.iti--container:hover {
+    cursor: pointer;
+}
+
+.iti-mobile .iti--container {
+    top: 30px;
+    bottom: 30px;
+    left: 30px;
+    right: 30px;
+    position: fixed;
+}
+
+.iti-mobile .iti__country-list {
+    max-height: 100%;
+    width: 100%;
+}
+
+.iti-mobile .iti__country {
+    padding: 10px 10px;
+    line-height: 1.5em;
+}
+
+.iti__flag.iti__np {
+    width: 21px;
+}
+
+.iti__flag.iti__ch {
+    width: 15px;
+}
+
+.iti__flag.iti__ne {
+    width: 18px;
+}
+
+.iti__flag.iti__va {
+    width: 15px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .iti__country-list {
+        background-color: #2b2b2b;
+        border-color: #555;
+    }
+    
+    .iti__country:hover {
+        background-color: #3a3a3a;
+    }
+    
+    .iti__country.iti__highlight {
+        background-color: #444;
+    }
+    
+    .iti__dial-code {
+        color: #aaa;
+    }
+}
+
+.elementor-field-type-tel .iti__selected-flag {
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.wpr-form-field-tel .iti__selected-flag {
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.iti__arrow {
+    border-top-color: #555;
+}
+
+.iti__arrow--up {
+    border-bottom-color: #555;
+}
+
+input[type="tel"].lfcf-phone-input:focus {
+    outline: none;
+}
+
+.iti--allow-dropdown input[type="tel"].lfcf-phone-input {
+    padding-left: 52px;
+}
+
+body.rtl .iti--allow-dropdown input[type="tel"].lfcf-phone-input {
+    padding-left: 6px;
+    padding-right: 52px;
+}
