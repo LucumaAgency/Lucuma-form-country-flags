@@ -154,39 +154,109 @@
                     }
                 });
                 
-                // Form submit validation
+                // Multiple form submit handlers for different scenarios
+                
+                // 1. Standard form submit
                 $input.closest('form').on('submit', function(e) {
+                    console.log('[LFCF DEBUG] Form submit event triggered');
+                    console.log('[LFCF DEBUG] Form data before processing:', $(this).serialize());
+                    
                     var hasErrors = false;
                     
-                    $(this).find('.lfcf-phone-input, .lfcf-initialized').each(function() {
+                    $(this).find('.lfcf-phone-input, .lfcf-initialized, input[type="tel"]').each(function() {
                         var phoneInput = this;
                         var $phoneInput = $(phoneInput);
                         var itiInstance = window.intlTelInputGlobals.getInstance(phoneInput);
+                        
+                        console.log('[LFCF DEBUG] Processing phone input:', {
+                            name: phoneInput.name,
+                            id: phoneInput.id,
+                            currentValue: $phoneInput.val(),
+                            hasInstance: !!itiInstance
+                        });
                         
                         if (itiInstance && $.trim($phoneInput.val())) {
                             if (!itiInstance.isValidNumber()) {
                                 hasErrors = true;
                                 $phoneInput.trigger('blur');
+                                console.log('[LFCF DEBUG] Invalid number detected');
                             } else {
-                                // Update the main input field with the full international number
+                                // Get full international number
                                 var fullNumber = itiInstance.getNumber();
+                                var countryData = itiInstance.getSelectedCountryData();
+                                
+                                console.log('[LFCF DEBUG] Valid number details:', {
+                                    originalValue: $phoneInput.val(),
+                                    fullNumber: fullNumber,
+                                    countryCode: countryData.dialCode,
+                                    countryISO: countryData.iso2
+                                });
+                                
+                                // Update the main input field with the full international number
                                 $phoneInput.val(fullNumber);
-                                console.log('[LFCF] Updated phone field with full number:', fullNumber);
+                                
+                                // Force update the input value attribute
+                                phoneInput.setAttribute('value', fullNumber);
+                                
+                                // Trigger change event to notify any listeners
+                                $phoneInput.trigger('change');
+                                
+                                console.log('[LFCF DEBUG] Updated phone field to:', $phoneInput.val());
+                                console.log('[LFCF DEBUG] Field attribute value:', phoneInput.getAttribute('value'));
                                 
                                 // Also update hidden input if it exists
                                 var $hiddenInput = $phoneInput.siblings('input[name="' + $phoneInput.attr('name') + '_full"]');
                                 if ($hiddenInput.length > 0) {
                                     $hiddenInput.val(fullNumber);
+                                    console.log('[LFCF DEBUG] Updated hidden input');
                                 }
                             }
                         }
                     });
+                    
+                    console.log('[LFCF DEBUG] Form data after processing:', $(this).serialize());
                     
                     if (hasErrors) {
                         e.preventDefault();
                         console.log('[LFCF] Form submission prevented due to invalid phone numbers');
                         return false;
                     }
+                });
+                
+                // 2. Elementor form specific handling
+                $input.closest('form').on('submit_success', function(e) {
+                    console.log('[LFCF DEBUG] Elementor form submit_success event');
+                });
+                
+                // 3. Before form submit (for AJAX forms)
+                $(document).on('elementor_pro/forms/form_submit_before', function(e, formData) {
+                    console.log('[LFCF DEBUG] Elementor Pro form_submit_before event');
+                    console.log('[LFCF DEBUG] FormData:', formData);
+                    
+                    // Process all phone inputs
+                    $('.lfcf-phone-input, .lfcf-initialized, input[type="tel"]').each(function() {
+                        var phoneInput = this;
+                        var $phoneInput = $(phoneInput);
+                        var itiInstance = window.intlTelInputGlobals.getInstance(phoneInput);
+                        
+                        if (itiInstance && $.trim($phoneInput.val())) {
+                            if (itiInstance.isValidNumber()) {
+                                var fullNumber = itiInstance.getNumber();
+                                var fieldName = $phoneInput.attr('name');
+                                
+                                console.log('[LFCF DEBUG] Updating FormData field:', fieldName, 'to:', fullNumber);
+                                
+                                // Update FormData if it exists
+                                if (formData && typeof formData.set === 'function') {
+                                    formData.set(fieldName, fullNumber);
+                                }
+                                
+                                // Update the input value
+                                $phoneInput.val(fullNumber);
+                                phoneInput.setAttribute('value', fullNumber);
+                            }
+                        }
+                    });
                 });
                 
             } catch (error) {
@@ -220,6 +290,44 @@
             initLucumaPhoneInputs();
         } else {
             console.error('[LFCF] intlTelInput library not loaded!');
+        }
+        
+        // Hook into Elementor Form Ajax submissions
+        if (typeof elementorFrontendConfig !== 'undefined') {
+            console.log('[LFCF DEBUG] Elementor frontend config detected');
+            
+            // Override Elementor form send method to update phone fields
+            $(document).on('submit', 'form.elementor-form', function(e) {
+                console.log('[LFCF DEBUG] Elementor form being submitted');
+                var $form = $(this);
+                
+                // Update all phone fields before submission
+                $form.find('input[type="tel"], .lfcf-phone-input, .lfcf-initialized').each(function() {
+                    var phoneInput = this;
+                    var $phoneInput = $(phoneInput);
+                    var itiInstance = window.intlTelInputGlobals.getInstance(phoneInput);
+                    
+                    if (itiInstance && $.trim($phoneInput.val())) {
+                        var fullNumber = itiInstance.getNumber();
+                        console.log('[LFCF DEBUG] Pre-submit update - Setting field to:', fullNumber);
+                        
+                        // Update using multiple methods to ensure it sticks
+                        $phoneInput.val(fullNumber);
+                        phoneInput.value = fullNumber;
+                        phoneInput.setAttribute('value', fullNumber);
+                        
+                        // If this is an Elementor field, also update its data
+                        if ($phoneInput.hasClass('elementor-field')) {
+                            $phoneInput.attr('data-value', fullNumber);
+                        }
+                    }
+                });
+                
+                // Small delay to ensure values are set
+                setTimeout(function() {
+                    console.log('[LFCF DEBUG] Final form data:', $form.serialize());
+                }, 10);
+            });
         }
     });
     
@@ -310,5 +418,76 @@
     
     // Make initialization function globally available
     window.initLFCFPhoneInputs = initLucumaPhoneInputs;
+    
+    // Intercept jQuery AJAX to update phone fields for Elementor forms
+    if (typeof jQuery.ajaxPrefilter !== 'undefined') {
+        jQuery.ajaxPrefilter(function(options, originalOptions, jqXHR) {
+            // Check if this is an Elementor form submission
+            if (options.url && options.url.includes('admin-ajax.php') && 
+                options.data && typeof options.data === 'string' && 
+                options.data.includes('action=elementor_pro_forms_send_form')) {
+                
+                console.log('[LFCF DEBUG] Intercepting Elementor form AJAX submission');
+                console.log('[LFCF DEBUG] Original data:', options.data);
+                
+                // Parse the form data
+                var formData = new URLSearchParams(options.data);
+                var formFields = {};
+                for (var pair of formData.entries()) {
+                    formFields[pair[0]] = pair[1];
+                }
+                
+                // Find and update phone fields
+                $('input[type="tel"], .lfcf-phone-input, .lfcf-initialized').each(function() {
+                    var phoneInput = this;
+                    var $phoneInput = $(phoneInput);
+                    var itiInstance = window.intlTelInputGlobals.getInstance(phoneInput);
+                    var fieldName = $phoneInput.attr('name');
+                    
+                    if (itiInstance && fieldName && $.trim($phoneInput.val())) {
+                        var fullNumber = itiInstance.getNumber();
+                        console.log('[LFCF DEBUG] Updating AJAX field:', fieldName, 'from:', formFields[fieldName], 'to:', fullNumber);
+                        
+                        // Update the form data
+                        if (formFields.hasOwnProperty(fieldName)) {
+                            formData.set(fieldName, fullNumber);
+                        }
+                        
+                        // Look for form_fields array format (Elementor specific)
+                        for (var key in formFields) {
+                            if (key.includes('form_fields[') && key.includes('[' + fieldName + ']')) {
+                                console.log('[LFCF DEBUG] Found Elementor field key:', key);
+                                formData.set(key, fullNumber);
+                            }
+                        }
+                    }
+                });
+                
+                // Reconstruct the data string
+                options.data = formData.toString();
+                console.log('[LFCF DEBUG] Modified data:', options.data);
+            }
+        });
+    }
+    
+    // Additional method: Override FormData for modern browsers
+    if (typeof window.FormData !== 'undefined') {
+        var originalAppend = FormData.prototype.append;
+        FormData.prototype.append = function(name, value) {
+            // Check if this is a phone field being appended
+            if (name && typeof value === 'string') {
+                var $phoneInput = $('input[name="' + name + '"][type="tel"], input[name="' + name + '"].lfcf-phone-input');
+                if ($phoneInput.length > 0) {
+                    var itiInstance = window.intlTelInputGlobals.getInstance($phoneInput[0]);
+                    if (itiInstance && $.trim(value)) {
+                        var fullNumber = itiInstance.getNumber();
+                        console.log('[LFCF DEBUG] FormData.append intercepted - updating:', name, 'from:', value, 'to:', fullNumber);
+                        value = fullNumber;
+                    }
+                }
+            }
+            return originalAppend.call(this, name, value);
+        };
+    }
 
 })(jQuery);
