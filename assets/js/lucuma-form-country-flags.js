@@ -168,9 +168,15 @@
                                 hasErrors = true;
                                 $phoneInput.trigger('blur');
                             } else {
+                                // Update the main input field with the full international number
+                                var fullNumber = itiInstance.getNumber();
+                                $phoneInput.val(fullNumber);
+                                console.log('[LFCF] Updated phone field with full number:', fullNumber);
+                                
+                                // Also update hidden input if it exists
                                 var $hiddenInput = $phoneInput.siblings('input[name="' + $phoneInput.attr('name') + '_full"]');
                                 if ($hiddenInput.length > 0) {
-                                    $hiddenInput.val(itiInstance.getNumber());
+                                    $hiddenInput.val(fullNumber);
                                 }
                             }
                         }

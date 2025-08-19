@@ -1,11 +1,10 @@
 <?php
 /**
  * Plugin Name: Lucuma Form Country Flags
- * Plugin URI: https://github.com/yourdomain/lucuma-form-country-flags
  * Description: Añade banderas de países con códigos telefónicos a los campos de teléfono en Elementor Forms y Royal Elementor Addons.
  * Version: 1.0.0
- * Author: Lucuma
- * Author URI: https://lucuma.com
+ * Author: Lucuma Agency
+ * Author URI: https://lucumaagency.com/desarrollo-de-plugins/
  * License: GPL v2 or later
  * Text Domain: lucuma-form-country-flags
  * Domain Path: /languages
