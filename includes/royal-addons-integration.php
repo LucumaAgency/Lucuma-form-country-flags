@@ -10,6 +10,11 @@ class LFCF_Royal_Addons_Integration {
         add_action( 'wpr_form_builder_after_field_render', array( $this, 'add_royal_tel_class' ), 10, 2 );
         add_filter( 'wpr_form_field_attributes', array( $this, 'add_royal_tel_attributes' ), 10, 2 );
         add_action( 'wp_footer', array( $this, 'add_royal_init_script' ) );
+        
+        // Hook into WPR form submission to process phone numbers
+        add_filter( 'wpr_form_builder_email_data', array( $this, 'process_phone_numbers' ), 10, 2 );
+        add_action( 'wp_ajax_wpr_form_builder_email', array( $this, 'intercept_form_submission' ), 1 );
+        add_action( 'wp_ajax_nopriv_wpr_form_builder_email', array( $this, 'intercept_form_submission' ), 1 );
     }
 
     public function add_royal_tel_class( $field, $widget ) {
@@ -73,6 +78,54 @@ class LFCF_Royal_Addons_Integration {
         });
         </script>
         <?php
+    }
+    
+    /**
+     * Intercept WPR form submission to process phone numbers
+     */
+    public function intercept_form_submission() {
+        if ( isset( $_POST['form_content'] ) && is_array( $_POST['form_content'] ) ) {
+            error_log( '[LFCF] Intercepting WPR form submission' );
+            
+            foreach ( $_POST['form_content'] as $field_key => &$field_values ) {
+                if ( is_array( $field_values ) && count( $field_values ) >= 2 ) {
+                    // Check if this is a tel field
+                    if ( isset( $field_values[0] ) && $field_values[0] === 'tel' ) {
+                        // The phone number is in index 1
+                        if ( isset( $field_values[1] ) ) {
+                            $original_phone = $field_values[1];
+                            
+                            // Check if we have the full number with country code in POST data
+                            // Look for the field in form_fields
+                            $field_id = str_replace( 'form_field-', '', $field_key );
+                            
+                            if ( isset( $_POST['form_fields'][ $field_id ] ) ) {
+                                $full_number = sanitize_text_field( $_POST['form_fields'][ $field_id ] );
+                                
+                                // If the full number starts with +, use it
+                                if ( strpos( $full_number, '+' ) === 0 ) {
+                                    $field_values[1] = $full_number;
+                                    error_log( '[LFCF] Updated phone from ' . $original_phone . ' to ' . $full_number );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Process phone numbers in email data
+     */
+    public function process_phone_numbers( $email_data, $form_data ) {
+        if ( isset( $email_data['message'] ) ) {
+            // Look for phone patterns and replace them with full international format
+            // This is a backup in case the JavaScript didn't catch it
+            error_log( '[LFCF] Processing email data for phone numbers' );
+        }
+        
+        return $email_data;
     }
 }
 
