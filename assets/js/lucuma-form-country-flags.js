@@ -141,6 +141,12 @@
                     }
                 });
                 
+                // Store original value before any changes
+                if (!originalPhoneValues[$input.attr('name')]) {
+                    originalPhoneValues[$input.attr('name')] = $input.val();
+                    console.log('[LFCF DEBUG] Stored original phone value for', $input.attr('name'), ':', $input.val());
+                }
+                
                 // Update hidden input on change
                 $input.on('keyup change', function() {
                     var $this = $(this);
@@ -479,12 +485,16 @@
         });
     }
     
+    // Store original phone values before they get modified
+    var originalPhoneValues = {};
+    
     // Helper function to process WPR form data
     function processWPRFormData(ajaxOptions) {
         var formData = new URLSearchParams(ajaxOptions.data);
         var dataModified = false;
         
         console.log('[LFCF DEBUG] Processing WPR form data');
+        console.log('[LFCF DEBUG] Raw AJAX data:', ajaxOptions.data);
         
         $('.lfcf-phone-input, .lfcf-initialized, input[type="tel"]').each(function() {
             var phoneInput = this;
@@ -492,9 +502,33 @@
             var itiInstance = window.intlTelInputGlobals.getInstance(phoneInput);
             var fieldName = $phoneInput.attr('name');
             
-            if (itiInstance && fieldName && $.trim($phoneInput.val())) {
+            if (itiInstance && fieldName) {
                 var fullNumber = itiInstance.getNumber();
-                var originalPhone = $phoneInput.val();
+                // Get the original value stored before modification, or extract from data
+                var originalPhone = originalPhoneValues[fieldName] || '';
+                
+                // If we don't have the original value stored, try to extract it from the form data
+                if (!originalPhone) {
+                    // Extract field ID from the name (e.g., form_fields[030cb07] -> 030cb07)
+                    var fieldIdMatch = fieldName.match(/form_fields\[([^\]]+)\]/);
+                    if (fieldIdMatch) {
+                        var fieldId = fieldIdMatch[1];
+                        var wprFieldKey = 'form_content[form_field-' + fieldId + '][]';
+                        
+                        // Look for the phone value in the raw data
+                        var phoneRegex = new RegExp(encodeURIComponent(wprFieldKey) + '=([^&]+)');
+                        var matches = ajaxOptions.data.match(new RegExp(phoneRegex, 'g'));
+                        
+                        if (matches && matches.length >= 2) {
+                            // The second match should be the phone value (first is type, second is value, third is label)
+                            var phoneMatch = matches[1].match(phoneRegex);
+                            if (phoneMatch) {
+                                originalPhone = decodeURIComponent(phoneMatch[1]);
+                                console.log('[LFCF DEBUG] Extracted original phone from data:', originalPhone);
+                            }
+                        }
+                    }
+                }
                 
                 console.log('[LFCF DEBUG] Processing field:', fieldName, 'Original:', originalPhone, 'Full:', fullNumber);
                 
@@ -507,11 +541,12 @@
                 // Handle WPR specific format: form_content[form_field-XXX][]
                 // Extract field ID from the name (e.g., form_fields[030cb07] -> 030cb07)
                 var fieldIdMatch = fieldName.match(/form_fields\[([^\]]+)\]/);
-                if (fieldIdMatch) {
+                if (fieldIdMatch && originalPhone && originalPhone !== fullNumber) {
                     var fieldId = fieldIdMatch[1];
                     var wprFieldKey = 'form_content[form_field-' + fieldId + '][]';
                     
                     console.log('[LFCF DEBUG] Looking for WPR field key:', wprFieldKey);
+                    console.log('[LFCF DEBUG] Will replace:', originalPhone, 'with:', fullNumber);
                     
                     // Get all values for this field
                     var allParams = ajaxOptions.data.split('&');
@@ -527,7 +562,11 @@
                             var value = decodedParam.substring(wprFieldKey.length + 1);
                             
                             // Check if this is the phone value (not type or label)
-                            if (value === originalPhone) {
+                            // Remove any non-digit characters for comparison
+                            var cleanValue = value.replace(/[^\d]/g, '');
+                            var cleanOriginal = originalPhone.replace(/[^\d]/g, '');
+                            
+                            if (value === originalPhone || cleanValue === cleanOriginal) {
                                 console.log('[LFCF DEBUG] Found phone value to replace:', value);
                                 updatedParams.push(encodeURIComponent(wprFieldKey) + '=' + encodeURIComponent(fullNumber));
                                 foundAndUpdated = true;
@@ -543,6 +582,9 @@
                     if (foundAndUpdated) {
                         ajaxOptions.data = updatedParams.join('&');
                         console.log('[LFCF DEBUG] Updated WPR form field');
+                        console.log('[LFCF DEBUG] New AJAX data:', ajaxOptions.data);
+                    } else {
+                        console.log('[LFCF DEBUG] Could not find phone value to replace in WPR data');
                     }
                 }
                 
