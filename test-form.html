@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Phone Form</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007cba;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #005a87;
+        }
+        #debug {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test WPR Form with Phone Field</h1>
+    
+    <form id="test-form">
+        <div class="form-group">
+            <label for="name">Nombre completo:</label>
+            <input type="text" id="name" name="name" value="test4debug" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Correo electrónico:</label>
+            <input type="email" id="email" name="email" value="test4@gmail.com" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="phone">Teléfono:</label>
+            <input type="tel" id="phone" name="phone" class="lfcf-phone-input" value="1231233456">
+        </div>
+        
+        <button type="submit">Enviar Formulario</button>
+    </form>
+    
+    <div id="debug">
+        <h3>Debug Output:</h3>
+        <div id="debug-content"></div>
+    </div>
+
+    <script>
+        // Initialize intl-tel-input
+        var iti;
+        $(document).ready(function() {
+            var input = document.querySelector("#phone");
+            iti = window.intlTelInput(input, {
+                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+                separateDialCode: false,
+                formatOnDisplay: true,
+                nationalMode: false,
+                autoPlaceholder: 'polite',
+                preferredCountries: ['us', 'gb', 'ca', 'au'],
+                initialCountry: 'us'
+            });
+            
+            addDebug('Phone input initialized');
+        });
+        
+        function addDebug(message) {
+            var debugContent = $('#debug-content');
+            var timestamp = new Date().toLocaleTimeString();
+            debugContent.append('[' + timestamp + '] ' + message + '\n');
+        }
+        
+        // Form submission handler
+        $('#test-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            addDebug('Form submission triggered');
+            
+            // Get the phone number with country code
+            var fullNumber = iti.getNumber();
+            var countryData = iti.getSelectedCountryData();
+            
+            addDebug('Phone value in field: ' + $('#phone').val());
+            addDebug('Full international number: ' + fullNumber);
+            addDebug('Country code: +' + countryData.dialCode);
+            addDebug('Country ISO: ' + countryData.iso2);
+            
+            // Prepare form data like WPR does
+            var formData = {
+                action: 'wpr_form_builder_email',
+                details: JSON.stringify([
+                    'Nombre completo: ' + $('#name').val() + '<br />',
+                    'Correo electrónico: ' + $('#email').val() + '<br />',
+                    ': ' + $('#phone').val()  // This mimics the WPR format with empty label
+                ])
+            };
+            
+            addDebug('Original form data:');
+            addDebug(JSON.stringify(formData, null, 2));
+            
+            // Simulate the plugin's phone number update
+            var details = JSON.parse(formData.details);
+            var originalPhone = $('#phone').val();
+            
+            details = details.map(function(item) {
+                if (item.includes(originalPhone)) {
+                    return item.replace(originalPhone, fullNumber);
+                }
+                return item;
+            });
+            
+            formData.details = JSON.stringify(details);
+            
+            addDebug('\nModified form data (with country code):');
+            addDebug(JSON.stringify(formData, null, 2));
+            
+            // Simulate AJAX request
+            addDebug('\nSimulating AJAX request to admin-ajax.php...');
+            addDebug('Expected result: Phone should appear as ' + fullNumber);
+        });
+    </script>
+</body>
+</html>

@@ -467,7 +467,118 @@
                 options.data = formData.toString();
                 console.log('[LFCF DEBUG] Modified data:', options.data);
             }
+            
+            // Also check for WPR Form Builder
+            if (options.url && options.url.includes('admin-ajax.php') && 
+                options.data && typeof options.data === 'string' && 
+                options.data.includes('action=wpr_form_builder_email')) {
+                
+                console.log('[LFCF DEBUG] Intercepting WPR form AJAX submission via ajaxPrefilter');
+                processWPRFormData(options);
+            }
         });
+    }
+    
+    // Helper function to process WPR form data
+    function processWPRFormData(ajaxOptions) {
+        var formData = new URLSearchParams(ajaxOptions.data);
+        var dataModified = false;
+        
+        $('.lfcf-phone-input, .lfcf-initialized, input[type="tel"]').each(function() {
+            var phoneInput = this;
+            var $phoneInput = $(phoneInput);
+            var itiInstance = window.intlTelInputGlobals.getInstance(phoneInput);
+            var fieldName = $phoneInput.attr('name');
+            
+            if (itiInstance && fieldName && $.trim($phoneInput.val())) {
+                var fullNumber = itiInstance.getNumber();
+                var originalPhone = $phoneInput.val();
+                
+                // Update field if exists
+                if (formData.has(fieldName)) {
+                    formData.set(fieldName, fullNumber);
+                    dataModified = true;
+                }
+                
+                // Update details field
+                if (formData.has('details')) {
+                    var details = formData.get('details');
+                    console.log('[LFCF DEBUG] Processing details field:', details);
+                    console.log('[LFCF DEBUG] Looking for phone:', originalPhone, 'to replace with:', fullNumber);
+                    
+                    try {
+                        var detailsArray = JSON.parse(details);
+                        if (Array.isArray(detailsArray)) {
+                            detailsArray = detailsArray.map(function(item) {
+                                if (typeof item === 'string') {
+                                    // Clean the original phone for comparison (remove non-digits)
+                                    var cleanOriginal = originalPhone.replace(/[^\d]/g, '');
+                                    
+                                    // Multiple replacement strategies
+                                    var newItem = item;
+                                    
+                                    // Strategy 1: Direct replacement
+                                    if (item.includes(originalPhone)) {
+                                        newItem = item.replace(originalPhone, fullNumber);
+                                    }
+                                    // Strategy 2: Replace with ": " pattern
+                                    else if (item.includes(': ' + originalPhone)) {
+                                        newItem = item.replace(': ' + originalPhone, ': ' + fullNumber);
+                                    }
+                                    // Strategy 3: Replace clean number
+                                    else if (item.includes(cleanOriginal)) {
+                                        newItem = item.replace(cleanOriginal, fullNumber);
+                                    }
+                                    // Strategy 4: Replace at the end of string (for unlabeled fields)
+                                    else if (item.endsWith(originalPhone)) {
+                                        newItem = item.substring(0, item.length - originalPhone.length) + fullNumber;
+                                    }
+                                    // Strategy 5: Use regex for flexible matching
+                                    else {
+                                        var phoneRegex = new RegExp('(: |>|^)' + cleanOriginal + '(<|$)', 'g');
+                                        if (phoneRegex.test(item)) {
+                                            newItem = item.replace(phoneRegex, function(match, prefix, suffix) {
+                                                return prefix + fullNumber + suffix;
+                                            });
+                                        }
+                                    }
+                                    
+                                    if (newItem !== item) {
+                                        console.log('[LFCF DEBUG] Replaced in details:', item, '->', newItem);
+                                    }
+                                    
+                                    return newItem;
+                                }
+                                return item;
+                            });
+                            formData.set('details', JSON.stringify(detailsArray));
+                            console.log('[LFCF DEBUG] Updated details array:', JSON.stringify(detailsArray));
+                            dataModified = true;
+                        }
+                    } catch (e) {
+                        console.log('[LFCF DEBUG] Details is not JSON, trying string replacement');
+                        if (details.includes(originalPhone)) {
+                            var updatedDetails = details.replace(originalPhone, fullNumber);
+                            formData.set('details', updatedDetails);
+                            dataModified = true;
+                        } else {
+                            // Try replacing clean number
+                            var cleanOriginal = originalPhone.replace(/[^\d]/g, '');
+                            if (details.includes(cleanOriginal)) {
+                                var updatedDetails = details.replace(cleanOriginal, fullNumber);
+                                formData.set('details', updatedDetails);
+                                dataModified = true;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        if (dataModified) {
+            ajaxOptions.data = formData.toString();
+            console.log('[LFCF DEBUG] Modified WPR form data');
+        }
     }
     
     // Additional method: Override FormData for modern browsers
@@ -489,5 +600,19 @@
             return originalAppend.call(this, name, value);
         };
     }
+    
+    // Intercept WPR Form Builder AJAX requests
+    $(document).on('ajaxSend', function(event, jqXHR, ajaxOptions) {
+        // Check if this is a WPR form submission
+        if (ajaxOptions.data && typeof ajaxOptions.data === 'string' && 
+            ajaxOptions.data.includes('wpr_form_builder_email')) {
+            
+            console.log('[LFCF DEBUG] WPR Form Builder AJAX detected via ajaxSend');
+            console.log('[LFCF DEBUG] Original AJAX data:', ajaxOptions.data);
+            
+            // Use the helper function to process the data
+            processWPRFormData(ajaxOptions);
+        }
+    });
 
 })(jQuery);
