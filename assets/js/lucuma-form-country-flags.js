@@ -18,11 +18,9 @@
     }
     
     window.initLucumaPhoneInputs = function() {
-        console.log('[LFCF] initLucumaPhoneInputs called');
         
         // Check if intlTelInput is available
         if (typeof window.intlTelInput === 'undefined') {
-            console.error('[LFCF] intlTelInput library not available');
             return;
         }
         
@@ -37,7 +35,6 @@
         ];
         
         var $phoneInputs = $(phoneSelectors.join(', '));
-        console.log('[LFCF] Found phone inputs:', $phoneInputs.length);
         
         $phoneInputs.each(function(index) {
             var input = this;
@@ -45,20 +42,10 @@
             
             // Skip if not an input element
             if (input.tagName !== 'INPUT') {
-                console.log('[LFCF] Skipping non-input element');
                 return;
             }
             
-            console.log('[LFCF] Processing input #' + index + ':', {
-                type: input.type,
-                name: input.name,
-                id: input.id,
-                classes: input.className,
-                alreadyInitialized: lfcfInitialized.indexOf(input) !== -1
-            });
-            
             if (lfcfInitialized.indexOf(input) !== -1) {
-                console.log('[LFCF] Input already initialized, skipping');
                 return;
             }
             
@@ -121,11 +108,9 @@
                 }
             }
             
-            console.log('[LFCF] Initializing intlTelInput with options:', options);
             
             try {
                 var iti = window.intlTelInput(input, options);
-                console.log('[LFCF] intlTelInput initialized successfully for input #' + index);
                 
                 lfcfInitialized.push(input);
                 $input.addClass('lfcf-initialized');
@@ -137,7 +122,6 @@
                         var countryData = itiInstance.getSelectedCountryData();
                         if (countryData && countryData.dialCode) {
                             $input.val(countryData.dialCode);
-                            console.log('[LFCF] Auto-inserted country code on init:', countryData.dialCode);
                         }
                     }
                 }, 100);
@@ -170,7 +154,6 @@
                 // Store original value before any changes
                 if (!originalPhoneValues[$input.attr('name')]) {
                     originalPhoneValues[$input.attr('name')] = $input.val();
-                    console.log('[LFCF DEBUG] Stored original phone value for', $input.attr('name'), ':', $input.val());
                 }
                 
                 // Update hidden input on change
@@ -203,8 +186,6 @@
                             var newValue = countryData.dialCode + cleanValue;
                             $this.val(newValue);
                             
-                            console.log('[LFCF] Country changed to:', countryData.iso2, 'Code:', countryData.dialCode);
-                            console.log('[LFCF] Updated field value to:', newValue);
                             
                             // Trigger change event to update hidden input
                             $this.trigger('change');
@@ -216,8 +197,6 @@
                 
                 // 1. Standard form submit
                 $input.closest('form').on('submit', function(e) {
-                    console.log('[LFCF DEBUG] Form submit event triggered');
-                    console.log('[LFCF DEBUG] Form data before processing:', $(this).serialize());
                     
                     var hasErrors = false;
                     
@@ -225,30 +204,15 @@
                         var phoneInput = this;
                         var $phoneInput = $(phoneInput);
                         var itiInstance = window.intlTelInputGlobals.getInstance(phoneInput);
-                        
-                        console.log('[LFCF DEBUG] Processing phone input:', {
-                            name: phoneInput.name,
-                            id: phoneInput.id,
-                            currentValue: $phoneInput.val(),
-                            hasInstance: !!itiInstance
-                        });
-                        
+                            
                         if (itiInstance && $.trim($phoneInput.val())) {
                             if (!itiInstance.isValidNumber()) {
                                 hasErrors = true;
                                 $phoneInput.trigger('blur');
-                                console.log('[LFCF DEBUG] Invalid number detected');
                             } else {
                                 // Get full international number without spaces or symbols
                                 var fullNumber = formatPhoneCompact(itiInstance);
                                 var countryData = itiInstance.getSelectedCountryData();
-                                
-                                console.log('[LFCF DEBUG] Valid number details:', {
-                                    originalValue: $phoneInput.val(),
-                                    fullNumber: fullNumber,
-                                    countryCode: countryData.dialCode,
-                                    countryISO: countryData.iso2
-                                });
                                 
                                 // Update the main input field with the formatted number
                                 $phoneInput.val(fullNumber);
@@ -259,37 +223,29 @@
                                 // Trigger change event to notify any listeners
                                 $phoneInput.trigger('change');
                                 
-                                console.log('[LFCF DEBUG] Updated phone field to:', $phoneInput.val());
-                                console.log('[LFCF DEBUG] Field attribute value:', phoneInput.getAttribute('value'));
                                 
                                 // Also update hidden input if it exists
                                 var $hiddenInput = $phoneInput.siblings('input[name="' + $phoneInput.attr('name') + '_full"]');
                                 if ($hiddenInput.length > 0) {
                                     $hiddenInput.val(fullNumber);
-                                    console.log('[LFCF DEBUG] Updated hidden input');
                                 }
                             }
                         }
                     });
                     
-                    console.log('[LFCF DEBUG] Form data after processing:', $(this).serialize());
                     
                     if (hasErrors) {
                         e.preventDefault();
-                        console.log('[LFCF] Form submission prevented due to invalid phone numbers');
                         return false;
                     }
                 });
                 
                 // 2. Elementor form specific handling
                 $input.closest('form').on('submit_success', function(e) {
-                    console.log('[LFCF DEBUG] Elementor form submit_success event');
                 });
                 
                 // 3. Before form submit (for AJAX forms)
                 $(document).on('elementor_pro/forms/form_submit_before', function(e, formData) {
-                    console.log('[LFCF DEBUG] Elementor Pro form_submit_before event');
-                    console.log('[LFCF DEBUG] FormData:', formData);
                     
                     // Process all phone inputs
                     $('.lfcf-phone-input, .lfcf-initialized, input[type="tel"]').each(function() {
@@ -302,7 +258,6 @@
                                 var fullNumber = formatPhoneCompact(itiInstance);
                                 var fieldName = $phoneInput.attr('name');
                                 
-                                console.log('[LFCF DEBUG] Updating FormData field:', fieldName, 'to:', fullNumber);
                                 
                                 // Update FormData if it exists
                                 if (formData && typeof formData.set === 'function') {
@@ -318,7 +273,6 @@
                 });
                 
             } catch (error) {
-                console.error('[LFCF] Error initializing intlTelInput:', error);
                 return;
             }
         });
@@ -339,24 +293,16 @@
     
     // Initialize on document ready
     $(document).ready(function() {
-        console.log('[LFCF] Document ready - Initializing Lucuma Form Country Flags');
-        console.log('[LFCF] intlTelInput available:', typeof window.intlTelInput !== 'undefined');
-        console.log('[LFCF] jQuery version:', $.fn.jquery);
         
         if (typeof window.intlTelInput !== 'undefined') {
-            console.log('[LFCF] Calling initLucumaPhoneInputs on document ready');
             initLucumaPhoneInputs();
-        } else {
-            console.error('[LFCF] intlTelInput library not loaded!');
-        }
+}
         
         // Hook into Elementor Form Ajax submissions
         if (typeof elementorFrontendConfig !== 'undefined') {
-            console.log('[LFCF DEBUG] Elementor frontend config detected');
             
             // Override Elementor form send method to update phone fields
             $(document).on('submit', 'form.elementor-form', function(e) {
-                console.log('[LFCF DEBUG] Elementor form being submitted');
                 var $form = $(this);
                 
                 // Update all phone fields before submission
@@ -367,7 +313,6 @@
                     
                     if (itiInstance && $.trim($phoneInput.val())) {
                         var fullNumber = formatPhoneCompact(itiInstance);
-                        console.log('[LFCF DEBUG] Pre-submit update - Setting field to:', fullNumber);
                         
                         // Update using multiple methods to ensure it sticks
                         $phoneInput.val(fullNumber);
@@ -383,7 +328,6 @@
                 
                 // Small delay to ensure values are set
                 setTimeout(function() {
-                    console.log('[LFCF DEBUG] Final form data:', $form.serialize());
                 }, 10);
             });
         }
@@ -391,13 +335,11 @@
     
     // Listen for Elementor popup events
     $(document).on('elementor/popup/show', function() {
-        console.log('[LFCF] Elementor popup shown - reinitializing');
         setTimeout(initLucumaPhoneInputs, 100);
     });
     
     // Listen for AJAX complete
     $(document).ajaxComplete(function() {
-        console.log('[LFCF] Ajax complete - checking for new phone inputs');
         setTimeout(initLucumaPhoneInputs, 100);
     });
     
@@ -420,7 +362,6 @@
             });
             
             if (shouldInit) {
-                console.log('[LFCF] DOM mutation detected with phone inputs - reinitializing');
                 setTimeout(initLucumaPhoneInputs, 100);
             }
         });
@@ -433,13 +374,11 @@
     
     // Initialize on window load as fallback
     $(window).on('load', function() {
-        console.log('[LFCF] Window loaded - final initialization attempt');
         setTimeout(initLucumaPhoneInputs, 500);
     });
     
     // Elementor specific hooks - with proper checks
     $(window).on('elementor/frontend/init', function() {
-        console.log('[LFCF] Elementor frontend init event fired');
         
         // Wait a bit for elementorFrontend to be fully initialized
         setTimeout(function() {
@@ -448,29 +387,23 @@
                 window.elementorFrontend.hooks && 
                 typeof window.elementorFrontend.hooks.addAction === 'function') {
                 
-                console.log('[LFCF] Adding Elementor hooks');
                 
                 window.elementorFrontend.hooks.addAction('frontend/element_ready/form.default', function($scope) {
-                    console.log('[LFCF] Elementor form element ready');
                     setTimeout(initLucumaPhoneInputs, 200);
                 });
                 
                 window.elementorFrontend.hooks.addAction('frontend/element_ready/global', function($scope) {
                     var $telInputs = $scope.find('input[type="tel"]');
                     if ($telInputs.length > 0) {
-                        console.log('[LFCF] Found tel inputs in Elementor element');
                         setTimeout(initLucumaPhoneInputs, 200);
                     }
                 });
-            } else {
-                console.log('[LFCF] elementorFrontend.hooks not available yet');
-            }
+}
         }, 100);
     });
     
     // Alternative Elementor Pro forms ready event
     $(document).on('elementor_pro_forms_ready', function() {
-        console.log('[LFCF] Elementor Pro forms ready event');
         initLucumaPhoneInputs();
     });
     
@@ -485,8 +418,6 @@
                 options.data && typeof options.data === 'string' && 
                 options.data.includes('action=elementor_pro_forms_send_form')) {
                 
-                console.log('[LFCF DEBUG] Intercepting Elementor form AJAX submission');
-                console.log('[LFCF DEBUG] Original data:', options.data);
                 
                 // Parse the form data
                 var formData = new URLSearchParams(options.data);
@@ -504,7 +435,6 @@
                     
                     if (itiInstance && fieldName && $.trim($phoneInput.val())) {
                         var fullNumber = formatPhoneCompact(itiInstance);
-                        console.log('[LFCF DEBUG] Updating AJAX field:', fieldName, 'from:', formFields[fieldName], 'to:', fullNumber);
                         
                         // Update the form data
                         if (formFields.hasOwnProperty(fieldName)) {
@@ -514,7 +444,6 @@
                         // Look for form_fields array format (Elementor specific)
                         for (var key in formFields) {
                             if (key.includes('form_fields[') && key.includes('[' + fieldName + ']')) {
-                                console.log('[LFCF DEBUG] Found Elementor field key:', key);
                                 formData.set(key, fullNumber);
                             }
                         }
@@ -523,7 +452,6 @@
                 
                 // Reconstruct the data string
                 options.data = formData.toString();
-                console.log('[LFCF DEBUG] Modified data:', options.data);
             }
             
             // Also check for WPR Form Builder
@@ -531,7 +459,6 @@
                 options.data && typeof options.data === 'string' && 
                 options.data.includes('action=wpr_form_builder_email')) {
                 
-                console.log('[LFCF DEBUG] Intercepting WPR form AJAX submission via ajaxPrefilter');
                 processWPRFormData(options);
             }
         });
@@ -545,8 +472,6 @@
         var formData = new URLSearchParams(ajaxOptions.data);
         var dataModified = false;
         
-        console.log('[LFCF DEBUG] Processing WPR form data');
-        console.log('[LFCF DEBUG] Raw AJAX data:', ajaxOptions.data);
         
         $('.lfcf-phone-input, .lfcf-initialized, input[type="tel"]').each(function() {
             var phoneInput = this;
@@ -576,13 +501,11 @@
                             var phoneMatch = matches[1].match(phoneRegex);
                             if (phoneMatch) {
                                 originalPhone = decodeURIComponent(phoneMatch[1]);
-                                console.log('[LFCF DEBUG] Extracted original phone from data:', originalPhone);
                             }
                         }
                     }
                 }
                 
-                console.log('[LFCF DEBUG] Processing field:', fieldName, 'Original:', originalPhone, 'Full:', fullNumber);
                 
                 // Update field if exists
                 if (formData.has(fieldName)) {
@@ -597,8 +520,6 @@
                     var fieldId = fieldIdMatch[1];
                     var wprFieldKey = 'form_content[form_field-' + fieldId + '][]';
                     
-                    console.log('[LFCF DEBUG] Looking for WPR field key:', wprFieldKey);
-                    console.log('[LFCF DEBUG] Will replace:', originalPhone, 'with:', fullNumber);
                     
                     // Get all values for this field
                     var allParams = ajaxOptions.data.split('&');
@@ -619,7 +540,6 @@
                             var cleanOriginal = originalPhone.replace(/[^\d]/g, '');
                             
                             if (value === originalPhone || cleanValue === cleanOriginal) {
-                                console.log('[LFCF DEBUG] Found phone value to replace:', value);
                                 updatedParams.push(encodeURIComponent(wprFieldKey) + '=' + encodeURIComponent(fullNumber));
                                 foundAndUpdated = true;
                                 dataModified = true;
@@ -633,18 +553,13 @@
                     
                     if (foundAndUpdated) {
                         ajaxOptions.data = updatedParams.join('&');
-                        console.log('[LFCF DEBUG] Updated WPR form field');
-                        console.log('[LFCF DEBUG] New AJAX data:', ajaxOptions.data);
                     } else {
-                        console.log('[LFCF DEBUG] Could not find phone value to replace in WPR data');
                     }
                 }
                 
                 // Update details field if it exists
                 if (formData.has('details')) {
                     var details = formData.get('details');
-                    console.log('[LFCF DEBUG] Processing details field:', details);
-                    console.log('[LFCF DEBUG] Looking for phone:', originalPhone, 'to replace with:', fullNumber);
                     
                     try {
                         var detailsArray = JSON.parse(details);
@@ -684,7 +599,6 @@
                                     }
                                     
                                     if (newItem !== item) {
-                                        console.log('[LFCF DEBUG] Replaced in details:', item, '->', newItem);
                                     }
                                     
                                     return newItem;
@@ -692,11 +606,9 @@
                                 return item;
                             });
                             formData.set('details', JSON.stringify(detailsArray));
-                            console.log('[LFCF DEBUG] Updated details array:', JSON.stringify(detailsArray));
                             dataModified = true;
                         }
                     } catch (e) {
-                        console.log('[LFCF DEBUG] Details is not JSON, trying string replacement');
                         if (details.includes(originalPhone)) {
                             var updatedDetails = details.replace(originalPhone, fullNumber);
                             formData.set('details', updatedDetails);
@@ -717,7 +629,6 @@
         
         if (dataModified) {
             ajaxOptions.data = formData.toString();
-            console.log('[LFCF DEBUG] Modified WPR form data');
         }
     }
     
@@ -732,7 +643,6 @@
                     var itiInstance = window.intlTelInputGlobals.getInstance($phoneInput[0]);
                     if (itiInstance && $.trim(value)) {
                         var fullNumber = formatPhoneCompact(itiInstance);
-                        console.log('[LFCF DEBUG] FormData.append intercepted - updating:', name, 'from:', value, 'to:', fullNumber);
                         value = fullNumber;
                     }
                 }
@@ -747,8 +657,6 @@
         if (ajaxOptions.data && typeof ajaxOptions.data === 'string' && 
             ajaxOptions.data.includes('wpr_form_builder_email')) {
             
-            console.log('[LFCF DEBUG] WPR Form Builder AJAX detected via ajaxSend');
-            console.log('[LFCF DEBUG] Original AJAX data:', ajaxOptions.data);
             
             // Use the helper function to process the data
             processWPRFormData(ajaxOptions);

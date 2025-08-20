@@ -85,7 +85,6 @@ class LFCF_Royal_Addons_Integration {
      */
     public function intercept_form_submission() {
         if ( isset( $_POST['form_content'] ) && is_array( $_POST['form_content'] ) ) {
-            error_log( '[LFCF] Intercepting WPR form submission' );
             
             foreach ( $_POST['form_content'] as $field_key => &$field_values ) {
                 if ( is_array( $field_values ) && count( $field_values ) >= 2 ) {
@@ -105,7 +104,6 @@ class LFCF_Royal_Addons_Integration {
                                 // If the full number starts with +, use it
                                 if ( strpos( $full_number, '+' ) === 0 ) {
                                     $field_values[1] = $full_number;
-                                    error_log( '[LFCF] Updated phone from ' . $original_phone . ' to ' . $full_number );
                                 }
                             }
                         }
@@ -122,7 +120,6 @@ class LFCF_Royal_Addons_Integration {
         if ( isset( $email_data['message'] ) ) {
             // Look for phone patterns and replace them with full international format
             // This is a backup in case the JavaScript didn't catch it
-            error_log( '[LFCF] Processing email data for phone numbers' );
         }
         
         return $email_data;
