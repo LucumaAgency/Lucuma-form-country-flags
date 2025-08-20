@@ -117,9 +117,14 @@
             var fullNumber = iti.getNumber();
             var countryData = iti.getSelectedCountryData();
             
+            // Format with parentheses
+            var localNumber = fullNumber.replace('+' + countryData.dialCode, '').trim();
+            var formattedNumber = '(+' + countryData.dialCode + ') ' + localNumber;
+            
             addDebug('Phone value in field: ' + $('#phone').val());
             addDebug('Full international number: ' + fullNumber);
-            addDebug('Country code: +' + countryData.dialCode);
+            addDebug('Formatted with parentheses: ' + formattedNumber);
+            addDebug('Country code: (+' + countryData.dialCode + ')');
             addDebug('Country ISO: ' + countryData.iso2);
             
             // Prepare form data like WPR does
@@ -141,19 +146,19 @@
             
             details = details.map(function(item) {
                 if (item.includes(originalPhone)) {
-                    return item.replace(originalPhone, fullNumber);
+                    return item.replace(originalPhone, formattedNumber);
                 }
                 return item;
             });
             
             formData.details = JSON.stringify(details);
             
-            addDebug('\nModified form data (with country code):');
+            addDebug('\nModified form data (with country code in parentheses):');
             addDebug(JSON.stringify(formData, null, 2));
             
             // Simulate AJAX request
             addDebug('\nSimulating AJAX request to admin-ajax.php...');
-            addDebug('Expected result: Phone should appear as ' + fullNumber);
+            addDebug('Expected result: Phone should appear as ' + formattedNumber);
         });
     </script>
 </body>

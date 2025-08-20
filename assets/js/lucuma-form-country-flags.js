@@ -3,6 +3,23 @@
 
     var lfcfInitialized = [];
 
+    // Helper function to format phone number with parentheses around country code
+    function formatPhoneWithParentheses(itiInstance) {
+        if (!itiInstance) return '';
+        
+        var countryData = itiInstance.getSelectedCountryData();
+        var fullNumber = itiInstance.getNumber();
+        
+        if (countryData && countryData.dialCode && fullNumber) {
+            // Remove the country code from the full number to get just the local number
+            var localNumber = fullNumber.replace('+' + countryData.dialCode, '').trim();
+            // Return formatted with parentheses
+            return '(+' + countryData.dialCode + ') ' + localNumber;
+        }
+        
+        return fullNumber;
+    }
+    
     window.initLucumaPhoneInputs = function() {
         console.log('[LFCF] initLucumaPhoneInputs called');
         
@@ -122,8 +139,8 @@
                     if (itiInstance && !$input.val()) {
                         var countryData = itiInstance.getSelectedCountryData();
                         if (countryData && countryData.dialCode) {
-                            $input.val('+' + countryData.dialCode + ' ');
-                            console.log('[LFCF] Auto-inserted country code on init:', '+' + countryData.dialCode);
+                            $input.val('(+' + countryData.dialCode + ') ');
+                            console.log('[LFCF] Auto-inserted country code on init:', '(+' + countryData.dialCode + ')');
                         }
                     }
                 }, 100);
@@ -167,7 +184,7 @@
                     if (itiInstance) {
                         var $hiddenInput = $this.siblings('input[name="' + $this.attr('name') + '_full"]');
                         if ($hiddenInput.length > 0) {
-                            $hiddenInput.val(itiInstance.getNumber());
+                            $hiddenInput.val(formatPhoneWithParentheses(itiInstance));
                         }
                     }
                 });
@@ -181,15 +198,15 @@
                         var countryData = itiInstance.getSelectedCountryData();
                         var currentValue = $this.val();
                         
-                        // Remove any existing country code from the beginning
-                        var cleanValue = currentValue.replace(/^\+\d+\s*/, '');
+                        // Remove any existing country code from the beginning (with or without parentheses)
+                        var cleanValue = currentValue.replace(/^(\(\+\d+\)|\+\d+)\s*/, '');
                         
-                        // Add the new country code
+                        // Add the new country code with parentheses
                         if (countryData && countryData.dialCode) {
-                            var newValue = '+' + countryData.dialCode + ' ' + cleanValue;
+                            var newValue = '(+' + countryData.dialCode + ') ' + cleanValue;
                             $this.val(newValue);
                             
-                            console.log('[LFCF] Country changed to:', countryData.iso2, 'Code:', '+' + countryData.dialCode);
+                            console.log('[LFCF] Country changed to:', countryData.iso2, 'Code:', '(+' + countryData.dialCode + ')');
                             console.log('[LFCF] Updated field value to:', newValue);
                             
                             // Trigger change event to update hidden input
@@ -225,8 +242,8 @@
                                 $phoneInput.trigger('blur');
                                 console.log('[LFCF DEBUG] Invalid number detected');
                             } else {
-                                // Get full international number
-                                var fullNumber = itiInstance.getNumber();
+                                // Get full international number with formatted parentheses
+                                var fullNumber = formatPhoneWithParentheses(itiInstance);
                                 var countryData = itiInstance.getSelectedCountryData();
                                 
                                 console.log('[LFCF DEBUG] Valid number details:', {
@@ -236,7 +253,7 @@
                                     countryISO: countryData.iso2
                                 });
                                 
-                                // Update the main input field with the full international number
+                                // Update the main input field with the formatted number
                                 $phoneInput.val(fullNumber);
                                 
                                 // Force update the input value attribute
@@ -285,7 +302,7 @@
                         
                         if (itiInstance && $.trim($phoneInput.val())) {
                             if (itiInstance.isValidNumber()) {
-                                var fullNumber = itiInstance.getNumber();
+                                var fullNumber = formatPhoneWithParentheses(itiInstance);
                                 var fieldName = $phoneInput.attr('name');
                                 
                                 console.log('[LFCF DEBUG] Updating FormData field:', fieldName, 'to:', fullNumber);
@@ -352,7 +369,7 @@
                     var itiInstance = window.intlTelInputGlobals.getInstance(phoneInput);
                     
                     if (itiInstance && $.trim($phoneInput.val())) {
-                        var fullNumber = itiInstance.getNumber();
+                        var fullNumber = formatPhoneWithParentheses(itiInstance);
                         console.log('[LFCF DEBUG] Pre-submit update - Setting field to:', fullNumber);
                         
                         // Update using multiple methods to ensure it sticks
@@ -489,7 +506,7 @@
                     var fieldName = $phoneInput.attr('name');
                     
                     if (itiInstance && fieldName && $.trim($phoneInput.val())) {
-                        var fullNumber = itiInstance.getNumber();
+                        var fullNumber = formatPhoneWithParentheses(itiInstance);
                         console.log('[LFCF DEBUG] Updating AJAX field:', fieldName, 'from:', formFields[fieldName], 'to:', fullNumber);
                         
                         // Update the form data
@@ -541,7 +558,7 @@
             var fieldName = $phoneInput.attr('name');
             
             if (itiInstance && fieldName) {
-                var fullNumber = itiInstance.getNumber();
+                var fullNumber = formatPhoneWithParentheses(itiInstance);
                 // Get the original value stored before modification, or extract from data
                 var originalPhone = originalPhoneValues[fieldName] || '';
                 
@@ -717,7 +734,7 @@
                 if ($phoneInput.length > 0) {
                     var itiInstance = window.intlTelInputGlobals.getInstance($phoneInput[0]);
                     if (itiInstance && $.trim(value)) {
-                        var fullNumber = itiInstance.getNumber();
+                        var fullNumber = formatPhoneWithParentheses(itiInstance);
                         console.log('[LFCF DEBUG] FormData.append intercepted - updating:', name, 'from:', value, 'to:', fullNumber);
                         value = fullNumber;
                     }
