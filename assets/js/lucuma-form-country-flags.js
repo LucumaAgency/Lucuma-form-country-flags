@@ -116,6 +116,18 @@
                 lfcfInitialized.push(input);
                 $input.addClass('lfcf-initialized');
                 
+                // Auto-insert country code on initialization if field is empty
+                setTimeout(function() {
+                    var itiInstance = window.intlTelInputGlobals.getInstance(input);
+                    if (itiInstance && !$input.val()) {
+                        var countryData = itiInstance.getSelectedCountryData();
+                        if (countryData && countryData.dialCode) {
+                            $input.val('+' + countryData.dialCode + ' ');
+                            console.log('[LFCF] Auto-inserted country code on init:', '+' + countryData.dialCode);
+                        }
+                    }
+                }, 100);
+                
                 // Add validation on blur
                 $input.on('blur', function() {
                     var $this = $(this);
@@ -156,6 +168,32 @@
                         var $hiddenInput = $this.siblings('input[name="' + $this.attr('name') + '_full"]');
                         if ($hiddenInput.length > 0) {
                             $hiddenInput.val(itiInstance.getNumber());
+                        }
+                    }
+                });
+                
+                // Add country code automatically when flag is selected
+                $input.on('countrychange', function() {
+                    var $this = $(this);
+                    var itiInstance = window.intlTelInputGlobals.getInstance(this);
+                    
+                    if (itiInstance) {
+                        var countryData = itiInstance.getSelectedCountryData();
+                        var currentValue = $this.val();
+                        
+                        // Remove any existing country code from the beginning
+                        var cleanValue = currentValue.replace(/^\+\d+\s*/, '');
+                        
+                        // Add the new country code
+                        if (countryData && countryData.dialCode) {
+                            var newValue = '+' + countryData.dialCode + ' ' + cleanValue;
+                            $this.val(newValue);
+                            
+                            console.log('[LFCF] Country changed to:', countryData.iso2, 'Code:', '+' + countryData.dialCode);
+                            console.log('[LFCF] Updated field value to:', newValue);
+                            
+                            // Trigger change event to update hidden input
+                            $this.trigger('change');
                         }
                     }
                 });

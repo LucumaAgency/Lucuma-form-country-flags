@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Phone Input with Country Code</title>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- intlTelInput CSS -->
+    <link rel="stylesheet" href="assets/lib/intl-tel-input/build/css/intlTelInput.css">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="tel"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .lfcf-error {
+            border-color: red !important;
+        }
+        .lfcf-error-msg {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+            display: block;
+        }
+        .output {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .output h3 {
+            margin-top: 0;
+        }
+        #console {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test - Phone Input with Auto Country Code</h1>
+    
+    <form id="test-form">
+        <div class="form-group">
+            <label for="phone">Número de teléfono:</label>
+            <input type="tel" id="phone" name="phone" class="lfcf-phone-input">
+        </div>
+        
+        <button type="submit">Enviar</button>
+    </form>
+    
+    <div class="output">
+        <h3>Valores actuales:</h3>
+        <p><strong>Valor del campo:</strong> <span id="field-value">-</span></p>
+        <p><strong>Número completo (internacional):</strong> <span id="full-number">-</span></p>
+        <p><strong>País seleccionado:</strong> <span id="selected-country">-</span></p>
+        <p><strong>Código de país:</strong> <span id="country-code">-</span></p>
+    </div>
+    
+    <div id="console">
+        <div>Console log...</div>
+    </div>
+    
+    <!-- intlTelInput JS -->
+    <script src="assets/lib/intl-tel-input/build/js/intlTelInput.min.js"></script>
+    <script src="assets/lib/intl-tel-input/build/js/utils.js"></script>
+    
+    <!-- Simulate lfcf_params -->
+    <script>
+        var lfcf_params = {
+            utils_script: 'assets/lib/intl-tel-input/build/js/utils.js',
+            format_on_display: '1',
+            national_mode: '0',
+            auto_placeholder: 'polite',
+            default_country: 'auto',
+            preferred_countries: ['us', 'gb', 'ca', 'au', 'es', 'mx']
+        };
+        
+        // Console log capture
+        var consoleDiv = document.getElementById('console');
+        var originalLog = console.log;
+        console.log = function() {
+            var message = Array.prototype.slice.call(arguments).join(' ');
+            originalLog.apply(console, arguments);
+            
+            var logEntry = document.createElement('div');
+            logEntry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            consoleDiv.appendChild(logEntry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        };
+    </script>
+    
+    <!-- Our plugin script -->
+    <script src="assets/js/lucuma-form-country-flags.js"></script>
+    
+    <script>
+        // Update display values
+        function updateDisplay() {
+            var phoneInput = document.getElementById('phone');
+            var iti = window.intlTelInputGlobals.getInstance(phoneInput);
+            
+            if (iti) {
+                var countryData = iti.getSelectedCountryData();
+                
+                document.getElementById('field-value').textContent = phoneInput.value || '-';
+                document.getElementById('full-number').textContent = iti.getNumber() || '-';
+                document.getElementById('selected-country').textContent = countryData.name || '-';
+                document.getElementById('country-code').textContent = countryData.dialCode ? '+' + countryData.dialCode : '-';
+            }
+        }
+        
+        // Update on change
+        $(document).ready(function() {
+            $('#phone').on('keyup change countrychange', updateDisplay);
+            
+            // Initial update after a delay
+            setTimeout(updateDisplay, 500);
+        });
+        
+        // Form submit handler
+        $('#test-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            var phoneInput = document.getElementById('phone');
+            var iti = window.intlTelInputGlobals.getInstance(phoneInput);
+            
+            if (iti) {
+                alert('Número enviado: ' + iti.getNumber());
+                console.log('Form submitted with number:', iti.getNumber());
+            }
+            
+            return false;
+        });
+    </script>
+</body>
+</html>
